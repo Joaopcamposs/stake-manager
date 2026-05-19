@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 class KPIResponse(BaseModel):
     banca_atual: Decimal
+    banca_inicial: Decimal
     variacao_pct: Decimal
     total_apostado: Decimal
     lucro_liquido: Decimal
@@ -17,6 +18,8 @@ class KPIResponse(BaseModel):
     streak_atual: int
     streak_tipo: str
     drawdown_maximo: Decimal
+    total_apostas: int
+    stake_medio: Decimal
 
 
 class TimeseriesPoint(BaseModel):
@@ -48,3 +51,24 @@ class WeekdayResult(BaseModel):
     weekday_name: str
     profit: Decimal
     count: int
+
+
+class MarketProfit(BaseModel):
+    market: str
+    profit: Decimal
+    count: int
+    rate: Decimal
+
+
+class MonthlyResult(BaseModel):
+    month: str
+    profit: Decimal
+    count: int
+
+
+class BetEvolutionPoint(BaseModel):
+    index: int
+    banca: Decimal
+    lucro_acumulado: Decimal
+    date: date
+    result: str

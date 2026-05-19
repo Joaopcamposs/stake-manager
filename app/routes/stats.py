@@ -64,9 +64,10 @@ async def odds_distribution(
 async def hit_rate_by_odds(
     session: AsyncSession = Depends(get_db),
     period: str | None = Query(None),
+    bet_type: str | None = Query(None),
 ):
     date_from, date_to = _parse_period(period)
-    data = await stats_service.get_hit_rate_by_odds(session, date_from, date_to)
+    data = await stats_service.get_hit_rate_by_odds(session, bet_type, date_from, date_to)
     return [d.model_dump() for d in data]
 
 
@@ -77,4 +78,37 @@ async def weekday_results(
 ):
     date_from, date_to = _parse_period(period)
     data = await stats_service.get_weekday_results(session, date_from, date_to)
+    return [d.model_dump() for d in data]
+
+
+@router.get("/market-profit")
+async def market_profit(
+    session: AsyncSession = Depends(get_db),
+    period: str | None = Query(None),
+    bet_type: str | None = Query(None),
+):
+    date_from, date_to = _parse_period(period)
+    data = await stats_service.get_market_profit(session, bet_type, date_from, date_to)
+    return [d.model_dump() for d in data]
+
+
+@router.get("/monthly")
+async def monthly_results(
+    session: AsyncSession = Depends(get_db),
+    period: str | None = Query(None),
+    bet_type: str | None = Query(None),
+):
+    date_from, date_to = _parse_period(period)
+    data = await stats_service.get_monthly_results(session, bet_type, date_from, date_to)
+    return [d.model_dump() for d in data]
+
+
+@router.get("/evolution")
+async def bet_evolution(
+    session: AsyncSession = Depends(get_db),
+    period: str | None = Query(None),
+    bet_type: str | None = Query(None),
+):
+    date_from, date_to = _parse_period(period)
+    data = await stats_service.get_bet_evolution(session, bet_type, date_from, date_to)
     return [d.model_dump() for d in data]

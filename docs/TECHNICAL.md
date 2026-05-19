@@ -24,13 +24,15 @@ app/
 │   ├── bet.py       # Bet model (BetType, BetResult, BetMarket enums)
 │   └── settings.py  # AppSettings key-value
 ├── schemas/
-│   └── bet.py       # Pydantic schemas (BetCreate, BetResultUpdate)
+│   ├── bet.py       # Pydantic schemas (BetCreate, BetResultUpdate)
+│   └── stats.py     # KPIResponse, TimeseriesPoint, ProfitByTypePoint, etc
 ├── services/
-│   └── bets.py      # Business logic (create, update, resolve, delete, list)
+│   ├── bets.py      # Business logic (create, update, resolve, delete, list)
+│   └── stats.py     # KPIs, timeseries, distribuição odds, hit rate, weekday
 ├── routes/
 │   ├── views.py     # HTML pages (home, login, dashboard, settings)
 │   ├── bets.py      # API CRUD (/bets)
-│   └── stats.py     # API stats (/stats)
+│   └── stats.py     # API stats (/api/stats/*)
 └── templates/       # Jinja2 HTML templates
 
 frontend/
@@ -61,7 +63,7 @@ Schema: `bet_tracker`
 | bet_date | DATE | data da aposta |
 | game_name | TEXT | nome do jogo (nullable) |
 | bet_type | VARCHAR | "principal" ou "zoiao" |
-| market | TEXT | mercado (over_X_X, asiatico_X_X) |
+| market | TEXT | mercado (over_X_5, asiatico_N) |
 | stake | NUMERIC(10,2) | valor apostado |
 | odd | NUMERIC(6,3) | odd |
 | result | VARCHAR | "green", "red", "void" (nullable = pendente) |
@@ -73,11 +75,61 @@ Schema: `bet_tracker`
 
 Key-value para configurações do app (banca_inicial, stakes padrão, etc).
 
+## API — Stats Endpoints
+
+Prefixo: `/api/stats`. Todos aceitam query params `period` (7d|30d|90d|all) e `bet_type` (principal|zoiao).
+
+| Endpoint | Retorno |
+|----------|---------|
+| `GET /api/stats` | KPIs: banca_atual, banca_inicial, variacao_pct, total_apostado, lucro_liquido, roi, taxa_acerto, odd_media_ponderada, breakeven, edge, streak_atual, streak_tipo, drawdown_maximo, total_apostas, stake_medio |
+| `GET /api/stats/timeseries` | Array de {date, banca} — evolução diária da banca |
+| `GET /api/stats/profit-by-type` | Array de {date, principal, zoiao} — lucro acumulado por tipo |
+| `GET /api/stats/odds-distribution` | Array de {range_start, range_end, count} — histograma de odds (step 0.1) |
+| `GET /api/stats/hit-rate-by-odds` | Array de {range_label, total, greens, rate} — taxa acerto por faixa |
+| `GET /api/stats/weekday` | Array de {weekday, weekday_name, profit, count} — lucro por dia da semana |
+| `GET /api/stats/market-profit` | Array de {market, profit, count, rate} — lucro e taxa por mercado |
+| `GET /api/stats/monthly` | Array de {month, profit, count} — lucro mensal agregado |
+
+### Lógica de Cálculo (stats service)
+
+- Filtra apenas apostas resolvidas (result != null), exclui void dos totais
+- **Banca atual** = banca_inicial + lucro_liquido
+- **ROI** = lucro / total apostado × 100
+- **Odd média** = ponderada por stake (Σ(odd×stake) / Σstake)
+- **Breakeven** = 1 / odd_média × 100
+- **Edge** = taxa_acerto - breakeven (positivo = vantagem)
+- **Drawdown** = maior queda entre pico e vale na evolução da banca
+- **Streak** = sequência final de resultados iguais (green ou red)
+
 ## Autenticação
 
 - Middleware `AuthMiddleware` (BaseHTTPMiddleware)
 - Cookie `session` assinado com `itsdangerous.URLSafeSerializer`
-- Paths excluídos: `/login`, `/health`, `/static/*`
+- Paths excluídos: `/login`, `/health`, `/static/*`, `/favicon*`
+
+## Frontend — Dashboard (dashboard.ts)
+
+- Chart.js com registro modular (LineController, BarController, scales, plugins)
+- Dark theme defaults (color #ccc, borderColor #333)
+- 5 gráficos independentes, cada um busca seu endpoint e faz destroy/recreate no refresh
+- Filtros (period + bet_type) disparam `loadAll()` que recarrega KPIs + todos os gráficos em paralelo
+- Gráfico de banca inclui linha tracejada referência (banca inicial hardcoded 1000 — TODO: buscar do settings)
+- Cores: azul (#2196f3) principal, laranja (#ff9800) zoião, verde/vermelho conforme lucro
+
+## Frontend — Home (home.ts)
+
+- Modal `<dialog>` reutilizado pra criar e editar
+- Modo criação: mostra principal + zoião, resultado opcional
+- Modo edição: esconde fieldset oposto, preenche valores, mostra botão excluir
+- Result buttons: visual feedback com ring-2 ring-white na seleção
+- Cálculo retorno em tempo real (stake × odd normalizada)
+- Delete com confirm() nativo
+
+## Frontend — Odd Input
+
+- Campo `type="text" inputmode="decimal"` (teclado numérico no mobile)
+- Auto-conversão no submit: "155" → "1.55" (ponto após primeiro dígito)
+- Cálculo de retorno usa normalização em tempo real
 
 ## Frontend Build
 

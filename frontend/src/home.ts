@@ -144,7 +144,7 @@ function calcReturn(stakeId: string, oddId: string, displayId: string) {
 
   function update() {
     const stake = parseFloat(stakeEl!.value) || 0;
-    const odd = parseFloat(oddEl!.value) || 0;
+    const odd = parseFloat(normalizeOdd(oddEl!.value)) || 0;
     displayEl!.textContent = stake > 0 && odd > 0 ? `R$ ${(stake * odd).toFixed(2)}` : "R$ —";
   }
 

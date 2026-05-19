@@ -20,6 +20,8 @@ async function loadPageModule(pageName: string) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => loadPageModule(page));
+} else {
   loadPageModule(page);
-});
+}

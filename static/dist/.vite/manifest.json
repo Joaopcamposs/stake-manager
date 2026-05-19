@@ -1,18 +1,18 @@
 {
   "src/dashboard.ts": {
-    "file": "js/dashboard-DUsFdTZC.js",
+    "file": "js/dashboard-DRTc22aL.js",
     "name": "dashboard",
     "src": "src/dashboard.ts",
     "isDynamicEntry": true
   },
   "src/home.ts": {
-    "file": "js/home-C6y3V_b4.js",
+    "file": "js/home-B8epi-Zu.js",
     "name": "home",
     "src": "src/home.ts",
     "isDynamicEntry": true
   },
   "src/main.ts": {
-    "file": "js/main-BbkBhyf7.js",
+    "file": "js/main-Dc3Glokh.js",
     "name": "main",
     "src": "src/main.ts",
     "isEntry": true,
@@ -21,7 +21,7 @@
       "src/dashboard.ts"
     ],
     "css": [
-      "assets/main-DH-omcH6.css"
+      "assets/main-RVjf7ApQ.css"
     ]
   }
 }
