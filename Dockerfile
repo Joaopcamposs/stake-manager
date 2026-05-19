@@ -1,19 +1,40 @@
-FROM python:3.14-slim AS base
+# syntax=docker/dockerfile:1
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+# --- Frontend build ---
+FROM node:22-slim AS frontend
+
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ .
+COPY app/templates/ ../app/templates/
+RUN npm run build
+
+# --- Python deps ---
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS builder
 
 WORKDIR /app
 
-FROM base AS deps
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-COPY pyproject.toml uv.lock* README.md ./
-RUN uv sync --no-dev --frozen --no-cache
+COPY pyproject.toml .
+RUN uv sync --no-dev --no-install-project
 
-FROM base AS runtime
-COPY --from=deps /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH="/app/app"
 COPY app/ app/
+RUN uv sync --no-dev
+
+# --- Runtime ---
+FROM python:3.14-slim-bookworm
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv /app/.venv
+COPY app/ app/
+COPY static/ static/
+COPY --from=frontend /static/dist static/dist/
+
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/app"
+ENV PYTHONUNBUFFERED=1
+
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--loop", "uvloop", "--no-access-log"]
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

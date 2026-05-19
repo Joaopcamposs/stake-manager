@@ -1,50 +1,58 @@
 [project]
-name = "fastapi-telegram-base"
+name = "bet-tracker"
 version = "0.1.0"
-description = "Base minimalista FastAPI + Telegram Bot com webhook interno"
+description = "Bet tracking web application"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "fastapi[standard]>=0.115.0",
-    "uvicorn[standard]>=0.34.0",
-    "sqlalchemy[asyncio]>=2.0.40",
-    "asyncpg>=0.30.0",
-    "httpx>=0.28.0",
-    "pydantic-settings>=2.9.0",
+    "fastapi[standard]>=0.115",
+    "sqlalchemy[asyncio]>=2.0",
+    "psycopg[binary,pool]>=3.2",
+    "pydantic-settings>=2.7",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.18",
+    "itsdangerous>=2.2",
+    "uuid7>=0.1",
+    "slowapi>=0.1",
 ]
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
-    "pytest-asyncio>=1.0.0",
-    "pytest-cov>=6.0",
-    "httpx>=0.28.0",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.28",
+    "factory-boy>=3.3",
+    "aiosqlite>=0.20",
     "ruff>=0.11.0",
-    "ty>=0.0.1a10",
-    "aiosqlite>=0.22.1",
 ]
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-pythonpath = ["app"]
-
-[tool.ty.environment]
-extra-paths = ["app"]
 
 [tool.ruff]
 target-version = "py314"
-line-length = 95
+line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "UP", "RUF"]
-ignore = ["E501"]
+select = ["E", "F", "W", "I", "N", "UP", "S", "B", "A", "C4", "PT"]
+ignore = ["S104", "S105", "S110", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "E501"]
+
+[tool.ty]
+python-version = "3.14"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["app"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["app", "infra", "telegram", "scheduler", "routes", "jobs"]
+known-first-party = ["app"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["app"]
+
+[tool.ty.environment]
+root = ["app"]
 
 [build-system]
 requires = ["hatchling"]

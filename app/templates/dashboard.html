@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex gap-3 mb-6">
+    <select id="filter-period"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <option value="all">Todo período</option>
+        <option value="7d">7 dias</option>
+        <option value="30d" selected>30 dias</option>
+        <option value="90d">90 dias</option>
+    </select>
+    <select id="filter-type"
+            class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+        <option value="">Todos tipos</option>
+        <option value="principal">Principal</option>
+        <option value="zoiao">Zoião</option>
+    </select>
+</div>
+
+<section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8" id="kpi-grid">
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Banca Atual</span>
+        <span class="block text-2xl font-bold" id="kpi-banca">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Variação %</span>
+        <span class="block text-2xl font-bold" id="kpi-variacao">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Total Apostado</span>
+        <span class="block text-2xl font-bold" id="kpi-total">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Lucro Líquido</span>
+        <span class="block text-2xl font-bold" id="kpi-lucro">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">ROI</span>
+        <span class="block text-2xl font-bold" id="kpi-roi">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Taxa Acerto</span>
+        <span class="block text-2xl font-bold" id="kpi-taxa">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Odd Média</span>
+        <span class="block text-2xl font-bold" id="kpi-odd">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Breakeven</span>
+        <span class="block text-2xl font-bold" id="kpi-breakeven">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4 ring-2 ring-blue-500">
+        <span class="block text-xs uppercase text-gray-400">Edge</span>
+        <span class="block text-2xl font-bold" id="kpi-edge">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Streak</span>
+        <span class="block text-2xl font-bold" id="kpi-streak">—</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Drawdown Max</span>
+        <span class="block text-2xl font-bold" id="kpi-drawdown">—</span>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-2 gap-6">
+    <div class="bg-gray-800 rounded-xl p-5">
+        <h5 class="text-sm font-medium text-gray-400 mb-3">Banca ao Longo do Tempo</h5>
+        <canvas id="chart-banca"></canvas>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-5">
+        <h5 class="text-sm font-medium text-gray-400 mb-3">Lucro por Tipo</h5>
+        <canvas id="chart-profit-type"></canvas>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-5">
+        <h5 class="text-sm font-medium text-gray-400 mb-3">Distribuição de Odds</h5>
+        <canvas id="chart-odds-dist"></canvas>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-5">
+        <h5 class="text-sm font-medium text-gray-400 mb-3">Taxa de Acerto por Faixa</h5>
+        <canvas id="chart-hit-rate"></canvas>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-5">
+        <h5 class="text-sm font-medium text-gray-400 mb-3">Resultado por Dia da Semana</h5>
+        <canvas id="chart-weekday"></canvas>
+    </div>
+</section>
+{% endblock %}
+

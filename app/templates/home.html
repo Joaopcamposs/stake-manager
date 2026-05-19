@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% set market_labels = {
+    "over_0_5": "Over 0.5", "over_1_5": "Over 1.5", "over_2_5": "Over 2.5",
+    "over_3_5": "Over 3.5", "over_4_5": "Over 4.5", "over_5_5": "Over 5.5",
+    "over_6_5": "Over 6.5", "over_7_5": "Over 7.5", "over_8_5": "Over 8.5",
+    "asiatico_1": "Asi 1", "asiatico_2": "Asi 2", "asiatico_3": "Asi 3",
+    "asiatico_4": "Asi 4", "asiatico_5": "Asi 5", "asiatico_6": "Asi 6",
+    "asiatico_7": "Asi 7", "asiatico_8": "Asi 8"
+} %}
+{% block content %}
+<section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Hoje</span>
+        <span class="block text-xl font-bold">{{ apostas_hoje }}</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Greens</span>
+        <span class="block text-xl font-bold text-green-400">{{ greens_today }}</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Reds</span>
+        <span class="block text-xl font-bold text-red-400">{{ reds_today }}</span>
+    </div>
+    <div class="bg-gray-800 rounded-xl p-4">
+        <span class="block text-xs uppercase text-gray-400">Lucro</span>
+        <span class="block text-xl font-bold">R$ {{ "%.2f"|format(lucro_hoje|float) }}</span>
+    </div>
+</section>
+
+<div class="flex justify-center mb-6">
+    <button id="btn-nova-aposta"
+            class="w-full max-w-md bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl text-lg font-bold py-4 shadow-lg hover:shadow-blue-500/25 transition text-white">
+        + Nova Aposta
+    </button>
+</div>
+
+<h4 class="text-lg font-semibold mb-3">Apostas Pendentes</h4>
+{% if pending %}
+<div class="space-y-3 mb-6">
+    {% for bet in pending %}
+    <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/60 transition bet-row"
+         data-bet-id="{{ bet.id }}"
+         data-game="{{ bet.game_name or '' }}"
+         data-date="{{ bet.bet_date }}"
+         data-type="{{ bet.bet_type.value }}"
+         data-market="{{ bet.market or '' }}"
+         data-stake="{{ bet.stake }}"
+         data-odd="{{ bet.odd }}"
+         data-result=""
+>
+        <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+                {% if bet.bet_type.value == "principal" %}
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400">principal</span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400">zoião</span>
+                {% endif %}
+                {% if bet.market %}
+                <span class="text-xs text-gray-300">{{ market_labels.get(bet.market, bet.market) }}</span>
+                {% endif %}
+                <strong class="text-sm">{{ bet.game_name or "—" }}</strong>
+            </div>
+            <span class="text-sm text-gray-400">R$ {{ "%.2f"|format(bet.stake|float) }} @ {{ "%.2f"|format(bet.odd|float) }}</span>
+            <small class="text-xs text-gray-500">{{ bet.bet_date }}</small>
+        </div>
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500 mb-6">Nenhuma aposta pendente.</p>
+{% endif %}
+
+<h4 class="text-lg font-semibold mb-3">Histórico Recente</h4>
+{% if resolved %}
+<div class="space-y-3">
+    {% for bet in resolved %}
+    <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/60 transition bet-row"
+         data-bet-id="{{ bet.id }}"
+         data-game="{{ bet.game_name or '' }}"
+         data-date="{{ bet.bet_date }}"
+         data-type="{{ bet.bet_type.value }}"
+         data-market="{{ bet.market or '' }}"
+         data-stake="{{ bet.stake }}"
+         data-odd="{{ bet.odd }}"
+         data-result="{{ bet.result.value if bet.result else '' }}"
+>
+        <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+                {% if bet.bet_type.value == "principal" %}
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400">principal</span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400">zoião</span>
+                {% endif %}
+                {% if bet.market %}
+                <span class="text-xs text-gray-300">{{ market_labels.get(bet.market, bet.market) }}</span>
+                {% endif %}
+                <strong class="text-sm">{{ bet.game_name or "—" }}</strong>
+                {% if bet.result %}
+                    {% if bet.result.value == "green" %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">green</span>
+                    {% elif bet.result.value == "red" %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">red</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-500/20 text-gray-400">void</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <span class="text-sm text-gray-400">R$ {{ "%.2f"|format(bet.stake|float) }} @ {{ "%.2f"|format(bet.odd|float) }} → R$ {{ "%.2f"|format(((bet.return_amount or 0)|float) - bet.stake|float) }}</span>
+            <small class="text-xs text-gray-500">{{ bet.bet_date }}</small>
+        </div>
+        <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500">Nenhuma aposta resolvida.</p>
+{% endif %}
+
+<!-- Modal Aposta (criar + editar) -->
+<dialog id="modal-aposta" class="bg-gray-800 rounded-2xl p-0 backdrop:bg-black/70 max-w-lg w-full">
+    <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 id="modal-title" class="text-xl font-bold">Nova Aposta</h3>
+            <button id="modal-close" class="text-gray-400 hover:text-white transition text-2xl leading-none">&times;</button>
+        </div>
+        <form id="form-aposta" class="space-y-4">
+            <input type="hidden" id="edit-bet-id" name="bet_id" value="">
+            <input type="hidden" id="edit-mode" value="create">
+            <input type="hidden" id="edit-bet-type" value="">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Jogo (opcional)</label>
+                <input type="text" name="game_name" id="field-game" placeholder="Ex: Flamengo x Palmeiras"
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Data</label>
+                <input type="date" name="bet_date" id="bet-date"
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+            </div>
+
+            <!-- Bloco Principal -->
+            <fieldset id="fieldset-principal" class="border border-gray-700 rounded-lg p-4">
+                <legend class="text-sm font-medium text-blue-400 px-2">Principal</legend>
+                <div class="mb-3">
+                    <label class="block text-xs text-gray-400 mb-1">Mercado</label>
+                    <select name="principal_market" id="principal-market"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <option value="">Selecione...</option>
+                        <option value="over_0_5">Over 0.5</option>
+                        <option value="over_1_5">Over 1.5</option>
+                        <option value="over_2_5">Over 2.5</option>
+                        <option value="over_3_5">Over 3.5</option>
+                        <option value="over_4_5">Over 4.5</option>
+                        <option value="over_5_5">Over 5.5</option>
+                        <option value="over_6_5">Over 6.5</option>
+                        <option value="over_7_5">Over 7.5</option>
+                        <option value="over_8_5">Over 8.5</option>
+                        <option value="asiatico_1">Asiático 1</option>
+                        <option value="asiatico_2">Asiático 2</option>
+                        <option value="asiatico_3">Asiático 3</option>
+                        <option value="asiatico_4">Asiático 4</option>
+                        <option value="asiatico_5">Asiático 5</option>
+                        <option value="asiatico_6">Asiático 6</option>
+                        <option value="asiatico_7">Asiático 7</option>
+                        <option value="asiatico_8">Asiático 8</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Valor</label>
+                        <input type="number" name="principal_stake" id="principal-stake" value="100" step="0.01" min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Odd</label>
+                        <input type="text" inputmode="decimal" name="principal_odd" id="principal-odd" placeholder="Ex: 155 = 1.55"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <small class="block mt-2 text-xs text-gray-400">Retorno: <span id="retorno-principal">R$ —</span></small>
+                <div class="mt-3">
+                    <label class="block text-xs text-gray-400 mb-1">Resultado</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" data-result="" data-target="principal" class="result-btn-principal rounded-lg py-2 font-bold text-xs border-2 border-gray-600 text-gray-400 hover:border-gray-400 transition">Pendente</button>
+                        <button type="button" data-result="green" data-target="principal" class="result-btn-principal rounded-lg py-2 font-bold text-xs border-2 border-green-600/50 text-green-400 hover:border-green-400 hover:bg-green-500/10 transition">Green</button>
+                        <button type="button" data-result="red" data-target="principal" class="result-btn-principal rounded-lg py-2 font-bold text-xs border-2 border-red-600/50 text-red-400 hover:border-red-400 hover:bg-red-500/10 transition">Red</button>
+                        <button type="button" data-result="void" data-target="principal" class="result-btn-principal rounded-lg py-2 font-bold text-xs border-2 border-gray-600/50 text-gray-300 hover:border-gray-400 hover:bg-gray-500/10 transition">Void</button>
+                    </div>
+                    <input type="hidden" id="field-result-principal" name="principal_result" value="">
+                </div>
+            </fieldset>
+
+            <!-- Bloco Zoião -->
+            <fieldset id="fieldset-zoiao" class="border border-gray-700 rounded-lg p-4">
+                <legend class="text-sm font-medium text-orange-400 px-2">Zoião</legend>
+                <div class="mb-3">
+                    <label class="block text-xs text-gray-400 mb-1">Mercado</label>
+                    <select name="zoiao_market" id="zoiao-market"
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                        <option value="">Selecione...</option>
+                        <option value="asiatico_1">Asiático 1</option>
+                        <option value="asiatico_2">Asiático 2</option>
+                        <option value="asiatico_3">Asiático 3</option>
+                        <option value="asiatico_4">Asiático 4</option>
+                        <option value="asiatico_5">Asiático 5</option>
+                        <option value="asiatico_6">Asiático 6</option>
+                        <option value="asiatico_7">Asiático 7</option>
+                        <option value="asiatico_8">Asiático 8</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Valor</label>
+                        <input type="number" name="zoiao_stake" id="zoiao-stake" value="25" step="0.01" min="0"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Odd</label>
+                        <input type="text" inputmode="decimal" name="zoiao_odd" id="zoiao-odd" placeholder="Ex: 155 = 1.55"
+                               class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                    </div>
+                </div>
+                <small class="block mt-2 text-xs text-gray-400">Retorno: <span id="retorno-zoiao">R$ —</span></small>
+                <div class="mt-3">
+                    <label class="block text-xs text-gray-400 mb-1">Resultado</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" data-result="" data-target="zoiao" class="result-btn-zoiao rounded-lg py-2 font-bold text-xs border-2 border-gray-600 text-gray-400 hover:border-gray-400 transition">Pendente</button>
+                        <button type="button" data-result="green" data-target="zoiao" class="result-btn-zoiao rounded-lg py-2 font-bold text-xs border-2 border-green-600/50 text-green-400 hover:border-green-400 hover:bg-green-500/10 transition">Green</button>
+                        <button type="button" data-result="red" data-target="zoiao" class="result-btn-zoiao rounded-lg py-2 font-bold text-xs border-2 border-red-600/50 text-red-400 hover:border-red-400 hover:bg-red-500/10 transition">Red</button>
+                        <button type="button" data-result="void" data-target="zoiao" class="result-btn-zoiao rounded-lg py-2 font-bold text-xs border-2 border-gray-600/50 text-gray-300 hover:border-gray-400 hover:bg-gray-500/10 transition">Void</button>
+                    </div>
+                    <input type="hidden" id="field-result-zoiao" name="zoiao_result" value="">
+                </div>
+            </fieldset>
+
+
+            <button type="submit" id="btn-submit"
+                    class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-blue-700 transition shadow-lg">
+                Salvar
+            </button>
+            <button type="button" id="btn-delete"
+                    class="hidden w-full text-red-400 border border-red-600/50 font-semibold py-3 rounded-lg hover:bg-red-500/10 hover:border-red-400 transition mt-2">
+                Excluir Aposta
+            </button>
+        </form>
+    </div>
+</dialog>
+{% endblock %}

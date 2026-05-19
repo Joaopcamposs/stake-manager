@@ -1,102 +1,96 @@
-"""Ponto de entrada — FastAPI com lifespan e webhook Telegram."""
-
-import asyncio
-import hmac
-import logging
+import sys
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any
+from pathlib import Path
 
-import sqlalchemy
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import jobs  # noqa: F401
-from infra.config import settings
-from infra.database import engine
-from infra.models import Base
-from routes import router as aux_routes
-from scheduler import start_all, stop_all
-from telegram import client
-from telegram.handler import handle_update
-from telegram.polling import polling_loop
+from assets import vite_asset
+from config import settings
+from db import Base, engine
+from fastapi import FastAPI, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from itsdangerous import URLSafeSerializer
+from routes import router
+from starlette.middleware.base import BaseHTTPMiddleware
 
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
-    datefmt="%H:%M:%S",
-)
-logger = logging.getLogger(__name__)
-
-_polling_task: asyncio.Task | None = None
+BASE_DIR = Path(__file__).resolve().parent
+TEMPLATES_DIR = BASE_DIR / "templates"
+PROJECT_ROOT = BASE_DIR.parent
+STATIC_DIR = PROJECT_ROOT / "static"
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Inicializa banco, inicia scheduler/polling e fecha conexões no shutdown."""
-    global _polling_task
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+    import logging
 
+    from sqlalchemy import text
+
+    logger = logging.getLogger(__name__)
     try:
         async with engine.begin() as conn:
-            if settings.db_schema:
-                await conn.execute(
-                    sqlalchemy.text(f"CREATE SCHEMA IF NOT EXISTS {settings.db_schema}")
-                )
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS bet_tracker"))
             await conn.run_sync(Base.metadata.create_all)
-        logger.info("Banco inicializado (schema=%s)", settings.db_schema or "public")
-    except Exception:
-        logger.warning(
-            "DB indisponível no startup — tabelas serão criadas na primeira conexão"
-        )
-
-    start_all()
-
-    if settings.telegram_polling:
-        _polling_task = asyncio.create_task(polling_loop())
-        logger.info("Polling mode ativado")
-    else:
-        logger.info("Webhook mode — polling desativado")
-
+            await conn.execute(
+                text("ALTER TABLE bet_tracker.bets ADD COLUMN IF NOT EXISTS market TEXT")
+            )
+        logger.info("Schema bet_tracker + tables created")
+    except Exception as e:
+        logger.warning("Could not connect to database on startup: %s", e)
     yield
-
-    if _polling_task:
-        _polling_task.cancel()
-        try:
-            await _polling_task
-        except asyncio.CancelledError:
-            pass
-        logger.info("Polling encerrado")
-
-    await stop_all()
-    await client.close_client()
     await engine.dispose()
-    logger.info("Shutdown completo")
 
 
-app = FastAPI(title="FastAPI Telegram Base", lifespan=lifespan)
-app.include_router(aux_routes)
+app = FastAPI(title="Bet Tracker", lifespan=lifespan)
+
+# Templates
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+templates.env.globals["vite"] = vite_asset("src/main.ts")
+
+# Static files
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-def verify_secret(x_telegram_bot_api_secret_token: str | None = Header(None)):
-    """Valida secret token do webhook Telegram."""
-    if not settings.telegram_webhook_secret:
-        return
-    if not x_telegram_bot_api_secret_token:
-        raise HTTPException(403, "Missing secret token")
-    if not hmac.compare_digest(
-        x_telegram_bot_api_secret_token, settings.telegram_webhook_secret
-    ):
-        raise HTTPException(403, "Invalid secret token")
+# --- Session / Auth Middleware ---
+
+serializer = URLSafeSerializer(settings.session_secret)
+
+EXCLUDED_PATHS = {"/login", "/health"}
+EXCLUDED_PREFIXES = ("/static/", "/favicon")
 
 
-@app.post(settings.webhook_path, dependencies=[Depends(verify_secret)])
-async def telegram_webhook(request: Request) -> dict[str, str]:
-    """Recebe updates do Telegram via webhook."""
-    update: dict[str, Any] = await request.json()
-    logger.info("Webhook update recebido: %s", update.get("update_id"))
-    await handle_update(update)
-    return {"status": "ok"}
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next) -> Response:
+        path = request.url.path
+
+        if path in EXCLUDED_PATHS or any(path.startswith(p) for p in EXCLUDED_PREFIXES):
+            return await call_next(request)
+
+        session_cookie = request.cookies.get("session")
+        if session_cookie:
+            try:
+                data = serializer.loads(session_cookie)
+                if data.get("authenticated"):
+                    request.state.authenticated = True
+                    return await call_next(request)
+            except Exception:
+                pass
+
+        if request.method == "GET":
+            return RedirectResponse(url="/login", status_code=302)
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+
+app.add_middleware(AuthMiddleware)
+
+
+# --- Routes ---
+
+app.include_router(router)
 
 
 @app.get("/health")
-async def health() -> dict[str, str]:
-    """Health check."""
-    return {"status": "healthy"}
+async def health():
+    return {"status": "ok"}

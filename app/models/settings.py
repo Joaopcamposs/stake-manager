@@ -1,0 +1,10 @@
+from db import Base
+from sqlalchemy import Text
+from sqlalchemy.orm import Mapped, mapped_column
+
+
+class AppSettings(Base):
+    __tablename__ = "settings"
+
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    value: Mapped[str] = mapped_column(Text)

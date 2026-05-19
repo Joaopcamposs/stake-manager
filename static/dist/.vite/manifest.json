@@ -1,0 +1,27 @@
+{
+  "src/dashboard.ts": {
+    "file": "js/dashboard-DUsFdTZC.js",
+    "name": "dashboard",
+    "src": "src/dashboard.ts",
+    "isDynamicEntry": true
+  },
+  "src/home.ts": {
+    "file": "js/home-C6y3V_b4.js",
+    "name": "home",
+    "src": "src/home.ts",
+    "isDynamicEntry": true
+  },
+  "src/main.ts": {
+    "file": "js/main-BbkBhyf7.js",
+    "name": "main",
+    "src": "src/main.ts",
+    "isEntry": true,
+    "dynamicImports": [
+      "src/home.ts",
+      "src/dashboard.ts"
+    ],
+    "css": [
+      "assets/main-DH-omcH6.css"
+    ]
+  }
+}

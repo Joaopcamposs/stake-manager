@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<h3 class="text-xl font-bold mb-6">Configurações</h3>
+<div class="bg-gray-800 rounded-xl p-6 max-w-lg">
+    <form method="post" action="/settings" class="space-y-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Banca Inicial (R$)</label>
+            <input type="number" name="banca_inicial" value="{{ settings.get('banca_inicial', '1000') }}" step="0.01"
+                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Stake Principal Padrão (R$)</label>
+            <input type="number" name="stake_principal_default" value="{{ settings.get('stake_principal_default', '100') }}" step="0.01"
+                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Stake Zoião Padrão (R$)</label>
+            <input type="number" name="stake_zoiao_default" value="{{ settings.get('stake_zoiao_default', '25') }}" step="0.01"
+                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-1">Odd Mínima</label>
+            <input type="number" name="odd_minima" value="{{ settings.get('odd_minima', '1.5') }}" step="0.01"
+                   class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+        </div>
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-lg transition">
+            Salvar
+        </button>
+    </form>
+</div>
+{% endblock %}

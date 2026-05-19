@@ -1,48 +1,27 @@
-.PHONY: install dev run test lint format docker up down clean setup resetdb
+.PHONY: dev test lint format db-up db-down frontend-build seed
 
-install:
-	uv sync
-
-dev:
-	PYTHONPATH=app uv run uvicorn app.main:app --reload --port 8010
-
-run:
-	PYTHONPATH=app uv run uvicorn app.main:app --host 0.0.0.0 --port 8010
+dev: frontend-build
+	uv run fastapi dev app/main.py
 
 test:
-	uv run pytest -x --tb=short -q --cov=app --cov-report=term-missing
+	uv run python -m pytest -x --tb=short -q
 
 lint:
-	uv run ruff check . --fix
-	uv run ty check
+	uv run python -m ruff check app/ tests/
+	uv run python -m ruff format --check app/ tests/
 
 format:
-	uv run ruff format . && uv run ruff check --fix .
+	uv run python -m ruff format app/ tests/
+	uv run python -m ruff check --fix app/ tests/
 
-docker:
-	docker build -t fastapi-telegram-base .
+db-up:
+	docker compose up -d
 
-up:
-	docker compose up -d --build
-
-down:
+db-down:
 	docker compose down
 
-setup:
-	bash scripts/setup.sh
+seed:
+	uv run python -c "import asyncio; from app.seed import run_seed; asyncio.run(run_seed())"
 
-validate:
-	bash scripts/validate.sh
-
-clean:
-	docker compose down -v
-	find . -type d -name __pycache__ -exec rm -rf {} +
-	rm -rf .pytest_cache .coverage htmlcov .ruff_cache
-
-resetdb:
-	docker compose down -v postgres
-	docker compose up postgres -d --wait
-	@docker compose ps --format '{{.Service}}' | grep -q app && docker compose restart app || true
-
-deploy:
-	fastapi deploy
+frontend-build:
+	cd frontend && npm run build

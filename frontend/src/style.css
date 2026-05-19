@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@source "../../app/templates/**/*.html";
+
+/* Dark theme custom properties */
+:root {
+  --color-primary: #3b82f6;
+  --color-surface: #111827;
+  --color-surface-alt: #1f2937;
+  --color-positive: #22c55e;
+  --color-negative: #ef4444;
+  --color-warning: #f59e0b;
+  --color-border: #374151;
+}
+
+/* Utility classes for bet results */
+.result-green {
+  color: var(--color-positive);
+  font-weight: 600;
+}
+
+.result-red {
+  color: var(--color-negative);
+  font-weight: 600;
+}
+
+.kpi-value.positive {
+  color: var(--color-positive);
+}
+
+.kpi-value.negative {
+  color: var(--color-negative);
+}
+
+dialog[open] {
+  margin: auto;
+  position: fixed;
+  inset: 0;
+}
