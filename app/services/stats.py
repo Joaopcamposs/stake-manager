@@ -32,7 +32,7 @@ async def _resolved_bets(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[Bet]:
-    stmt = select(Bet).where(Bet.result.is_not(None))
+    stmt = select(Bet).where(Bet.result.is_not(None)).where(Bet.result != BetResult.void)
     if bet_type:
         stmt = stmt.where(Bet.bet_type == BetType(bet_type))
     if date_from:
@@ -68,9 +68,6 @@ async def get_kpis(
     max_drawdown = Decimal("0")
 
     for bet in bets:
-        if bet.result == BetResult.void:
-            continue
-
         total_apostado += bet.stake
         profit = (bet.return_amount or Decimal("0")) - bet.stake
         lucro_liquido += profit
@@ -205,9 +202,7 @@ async def get_odds_distribution(
     result: list[OddsDistributionBin] = []
     for key in sorted(bins.keys(), key=lambda x: Decimal(x)):
         val = Decimal(key)
-        result.append(
-            OddsDistributionBin(range_start=val, range_end=val, count=bins[key])
-        )
+        result.append(OddsDistributionBin(range_start=val, range_end=val, count=bins[key]))
     return result
 
 
@@ -234,8 +229,6 @@ async def get_hit_rate_by_odds(
     }
 
     for bet in bets:
-        if bet.result == BetResult.void:
-            continue
         for start, end, label in brackets:
             if start <= bet.odd < end:
                 data_map[label]["total"] += 1
@@ -303,8 +296,6 @@ async def get_market_profit(
         lambda: {"profit": Decimal("0"), "count": 0, "greens": 0}
     )
     for bet in bets:
-        if bet.result == BetResult.void:
-            continue
         m = bet.market or "sem_mercado"
         profit = (bet.return_amount or Decimal("0")) - bet.stake
         markets[m]["profit"] += profit
