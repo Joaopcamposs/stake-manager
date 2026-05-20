@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from models.settings import AppSettings
 from services import bets as bet_service
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils import today_sp
 
 router = APIRouter()
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -20,27 +21,38 @@ templates.env.globals["vite"] = vite_asset("src/main.ts")
 
 
 @router.get("/", response_class=HTMLResponse)
-async def home(request: Request, session: AsyncSession = Depends(get_db)):
+async def home(
+    request: Request,
+    session: AsyncSession = Depends(get_db),
+    day: str | None = None,
+):
+    today = today_sp()
+    selected_date = date.fromisoformat(day) if day else today
+
     pending = await bet_service.list_pending(session)
-    resolved = await bet_service.list_resolved(session, limit=20)
+    resolved_day = await bet_service.list_resolved(
+        session, date_from=selected_date, date_to=selected_date, limit=100
+    )
+    resolved_recent = await bet_service.list_resolved(session, limit=20)
 
-    today_bets = [b for b in pending if b.bet_date == date.today()]
-    today_resolved = [b for b in resolved if b.bet_date == date.today()]
+    day_pending = [b for b in pending if b.bet_date == selected_date]
 
-    greens_today = sum(1 for b in today_resolved if b.result and b.result.value == "green")
-    reds_today = sum(1 for b in today_resolved if b.result and b.result.value == "red")
-    lucro_hoje = sum((b.return_amount or Decimal("0")) - b.stake for b in today_resolved)
+    greens_day = sum(1 for b in resolved_day if b.result and b.result.value == "green")
+    reds_day = sum(1 for b in resolved_day if b.result and b.result.value == "red")
+    lucro_day = sum((b.return_amount or Decimal("0")) - b.stake for b in resolved_day)
 
     return templates.TemplateResponse(
         request,
         "home.html",
         {
-            "pending": pending,
-            "resolved": resolved,
-            "apostas_hoje": len(today_bets) + len(today_resolved),
-            "greens_today": greens_today,
-            "reds_today": reds_today,
-            "lucro_hoje": lucro_hoje,
+            "pending": day_pending,
+            "resolved": resolved_day if not (selected_date == today) else resolved_recent,
+            "selected_date": selected_date.isoformat(),
+            "is_today": selected_date == today,
+            "apostas_hoje": len(day_pending) + len(resolved_day),
+            "greens_today": greens_day,
+            "reds_today": reds_day,
+            "lucro_hoje": lucro_day,
         },
     )
 

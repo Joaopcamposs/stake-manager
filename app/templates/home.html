@@ -8,9 +8,17 @@
     "asiatico_7": "Asi 7", "asiatico_8": "Asi 8"
 } %}
 {% block content %}
+<div class="flex items-center gap-3 mb-6">
+    <input type="date" id="day-selector" value="{{ selected_date }}"
+           class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+    {% if not is_today %}
+    <a href="/" class="text-sm text-blue-400 hover:text-blue-300 transition">Voltar pra hoje</a>
+    {% endif %}
+</div>
+
 <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
     <div class="bg-gray-800 rounded-xl p-4">
-        <span class="block text-xs uppercase text-gray-400">Hoje</span>
+        <span class="block text-xs uppercase text-gray-400">{{ "Hoje" if is_today else selected_date }}</span>
         <span class="block text-xl font-bold">{{ apostas_hoje }}</span>
     </div>
     <div class="bg-gray-800 rounded-xl p-4">

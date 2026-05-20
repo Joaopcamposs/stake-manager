@@ -4,6 +4,7 @@ from db import get_db
 from fastapi import APIRouter, Depends, Query
 from services import stats as stats_service
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils import today_sp
 
 router = APIRouter(prefix="/api/stats", tags=["stats"])
 
@@ -14,7 +15,7 @@ def _parse_period(period: str | None) -> tuple[date | None, date | None]:
     days_map = {"7d": 7, "30d": 30, "90d": 90}
     days = days_map.get(period)
     if days:
-        return date.today() - timedelta(days=days), date.today()
+        return today_sp() - timedelta(days=days), today_sp()
     return None, None
 
 
@@ -100,6 +101,17 @@ async def monthly_results(
 ):
     date_from, date_to = _parse_period(period)
     data = await stats_service.get_monthly_results(session, bet_type, date_from, date_to)
+    return [d.model_dump() for d in data]
+
+
+@router.get("/market-results")
+async def market_results(
+    session: AsyncSession = Depends(get_db),
+    period: str | None = Query(None),
+    bet_type: str | None = Query(None),
+):
+    date_from, date_to = _parse_period(period)
+    data = await stats_service.get_market_results(session, bet_type, date_from, date_to)
     return [d.model_dump() for d in data]
 
 

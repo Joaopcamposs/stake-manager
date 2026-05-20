@@ -12,8 +12,14 @@ const btnDelete = document.getElementById("btn-delete");
 const fieldResultPrincipal = document.getElementById("field-result-principal") as HTMLInputElement;
 const fieldResultZoiao = document.getElementById("field-result-zoiao") as HTMLInputElement;
 
+function toSaoPauloDate(date: Date): Date {
+  const saoPauloOffset = -3; // UTC-3 for São Paulo (no DST since 2019)
+  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
+  return new Date(utc + (saoPauloOffset * 3600000));
+}
+
 function localDate(): string {
-  const now = new Date();
+  const now = toSaoPauloDate(new Date());
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
@@ -231,3 +237,12 @@ const dateInput = document.getElementById("bet-date") as HTMLInputElement;
 if (dateInput && !dateInput.value) {
   dateInput.value = localDate();
 }
+
+// Day selector navigation
+const daySelector = document.getElementById("day-selector") as HTMLInputElement;
+daySelector?.addEventListener("change", () => {
+  const val = daySelector.value;
+  if (val) {
+    window.location.href = `/?day=${val}`;
+  }
+});

@@ -6,11 +6,12 @@ from models.bet import Bet, BetResult, BetType
 from schemas.bet import BetCreate
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils import today_sp
 from uuid_extensions import uuid7
 
 
 async def create_bets(session: AsyncSession, data: BetCreate) -> list[Bet]:
-    bet_date = data.bet_date or date.today()
+    bet_date = data.bet_date or today_sp()
     bets: list[Bet] = []
 
     has_principal = data.principal_odd is not None and data.principal_odd > 0

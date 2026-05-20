@@ -142,6 +142,51 @@ async function loadEvolutionChart() {
   const ctx = document.getElementById("chart-evolution") as HTMLCanvasElement;
   if (!data.length || !ctx) return;
 
+  // Find indices where date changes (day boundaries)
+  const dayBoundaries: number[] = [];
+  for (let i = 1; i < data.length; i++) {
+    if (data[i].date !== data[i - 1].date) {
+      dayBoundaries.push(i);
+    }
+  }
+
+  const dayLinePlugin = {
+    id: "dayLines",
+    afterDraw(chart: Chart) {
+      const { ctx: c, chartArea, scales } = chart;
+      if (!scales.x) return;
+      c.save();
+      c.strokeStyle = "rgba(255, 255, 255, 0.15)";
+      c.lineWidth = 1;
+      c.setLineDash([4, 4]);
+
+      for (const idx of dayBoundaries) {
+        const x = scales.x.getPixelForValue(idx);
+        if (x >= chartArea.left && x <= chartArea.right) {
+          c.beginPath();
+          c.moveTo(x, chartArea.top);
+          c.lineTo(x, chartArea.bottom);
+          c.stroke();
+        }
+      }
+
+      // Draw date labels at boundaries
+      c.setLineDash([]);
+      c.fillStyle = "rgba(255, 255, 255, 0.4)";
+      c.font = "10px sans-serif";
+      c.textAlign = "center";
+      for (const idx of dayBoundaries) {
+        const x = scales.x.getPixelForValue(idx);
+        if (x >= chartArea.left && x <= chartArea.right) {
+          const dateStr = data[idx].date.slice(5); // MM-DD
+          c.fillText(dateStr, x, chartArea.top - 4);
+        }
+      }
+
+      c.restore();
+    },
+  };
+
   charts["evolution"] = new Chart(ctx, {
     type: "line",
     data: {
@@ -174,10 +219,12 @@ async function loadEvolutionChart() {
       maintainAspectRatio: false,
       animation: { duration: 600, easing: "easeOutQuart" },
       plugins: { legend: { display: true } },
+      layout: { padding: { top: 16 } },
       scales: {
         x: { title: { display: true, text: "Aposta #" } },
       },
     },
+    plugins: [dayLinePlugin],
   });
 }
 
@@ -382,6 +429,61 @@ async function loadWeekdayChart() {
   });
 }
 
+async function loadMarketResultsCharts() {
+  interface MarketResult { market: string; greens: number; reds: number }
+  const data = await fetchJson<MarketResult[]>("/api/stats/market-results");
+
+  // Greens chart
+  destroyChart("marketGreens");
+  const ctxG = document.getElementById("chart-market-greens") as HTMLCanvasElement;
+  if (data.length && ctxG) {
+    const sorted = [...data].sort((a, b) => b.greens - a.greens);
+    charts["marketGreens"] = new Chart(ctxG, {
+      type: "bar",
+      data: {
+        labels: sorted.map((d) => marketLabel(d.market)),
+        datasets: [{
+          label: "Greens",
+          data: sorted.map((d) => d.greens),
+          backgroundColor: "rgba(76, 175, 80, 0.7)",
+          borderColor: "#4caf50",
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 600, easing: "easeOutQuart" },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      },
+    });
+  }
+
+  // Reds chart
+  destroyChart("marketReds");
+  const ctxR = document.getElementById("chart-market-reds") as HTMLCanvasElement;
+  if (data.length && ctxR) {
+    const sorted = [...data].sort((a, b) => b.reds - a.reds);
+    charts["marketReds"] = new Chart(ctxR, {
+      type: "bar",
+      data: {
+        labels: sorted.map((d) => marketLabel(d.market)),
+        datasets: [{
+          label: "Reds",
+          data: sorted.map((d) => d.reds),
+          backgroundColor: "rgba(244, 67, 54, 0.7)",
+          borderColor: "#f44336",
+          borderWidth: 1,
+        }],
+      },
+      options: {
+        responsive: true,
+        animation: { duration: 600, easing: "easeOutQuart" },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+      },
+    });
+  }
+}
+
 async function loadAll() {
   await loadKPIs();
   await Promise.all([
@@ -392,6 +494,7 @@ async function loadAll() {
     loadMarketChart(),
     loadOddsDistChart(),
     loadWeekdayChart(),
+    loadMarketResultsCharts(),
   ]);
 }
 

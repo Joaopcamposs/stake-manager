@@ -72,3 +72,9 @@ class BetEvolutionPoint(BaseModel):
     lucro_acumulado: Decimal
     date: date
     result: str
+
+
+class MarketResults(BaseModel):
+    market: str
+    greens: int
+    reds: int

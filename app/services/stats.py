@@ -9,6 +9,7 @@ from schemas.stats import (
     HitRateByOdds,
     KPIResponse,
     MarketProfit,
+    MarketResults,
     MonthlyResult,
     OddsDistributionBin,
     ProfitByTypePoint,
@@ -346,6 +347,28 @@ async def get_monthly_results(
                 count=int(data["count"]),
             )
         )
+    return result
+
+
+async def get_market_results(
+    session: AsyncSession,
+    bet_type: str | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> list[MarketResults]:
+    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+
+    counts: dict[str, dict[str, int]] = defaultdict(lambda: {"greens": 0, "reds": 0})
+    for bet in bets:
+        m = bet.market or "sem_mercado"
+        if bet.result == BetResult.green:
+            counts[m]["greens"] += 1
+        elif bet.result == BetResult.red:
+            counts[m]["reds"] += 1
+
+    result: list[MarketResults] = []
+    for market, data in sorted(counts.items(), key=lambda x: x[1]["greens"] + x[1]["reds"], reverse=True):
+        result.append(MarketResults(market=market, greens=data["greens"], reds=data["reds"]))
     return result
 
 
