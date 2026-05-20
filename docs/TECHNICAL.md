@@ -1,4 +1,4 @@
-# Bet Tracker — Documentação Técnica
+# Stake Manager — Documentação Técnica
 
 ## Stack
 
@@ -52,7 +52,7 @@ static/
 
 ## Banco de Dados
 
-Schema: `bet_tracker`
+Schema: `stake_manager`
 
 ### Tabela `bets`
 
@@ -156,7 +156,7 @@ make test
 ### Variáveis de Ambiente (.env)
 
 ```
-DATABASE_URL=postgresql+psycopg://bet:bet@localhost:5432/bet_tracker
+DATABASE_URL=postgresql+psycopg://bet:bet@localhost:5432/stake_manager
 APP_PASSWORD=troque_isso
 SESSION_SECRET=gere_uma_chave_aleatoria_longa
 TIMEZONE=America/Sao_Paulo

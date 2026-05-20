@@ -32,8 +32,11 @@ async def _resolved_bets(
     bet_type: str | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
+    include_void: bool = False,
 ) -> list[Bet]:
-    stmt = select(Bet).where(Bet.result.is_not(None)).where(Bet.result != BetResult.void)
+    stmt = select(Bet).where(Bet.result.is_not(None))
+    if not include_void:
+        stmt = stmt.where(Bet.result != BetResult.void)
     if bet_type:
         stmt = stmt.where(Bet.bet_type == BetType(bet_type))
     if date_from:
@@ -52,7 +55,9 @@ async def get_kpis(
     date_to: date | None = None,
 ) -> KPIResponse:
     banca_inicial = Decimal(await _get_setting(session, "banca_inicial", "1000"))
-    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+    # Include void so streak and evolution are accurate; filter them out for
+    # monetary/rate metrics below.
+    bets = await _resolved_bets(session, bet_type, date_from, date_to, include_void=True)
 
     total_apostado = Decimal("0")
     lucro_liquido = Decimal("0")
@@ -61,7 +66,7 @@ async def get_kpis(
     weighted_odds_sum = Decimal("0")
     weighted_stake_sum = Decimal("0")
 
-    # For streak
+    # For streak (void included but treated as neutral)
     results_ordered: list[str] = []
     # For drawdown
     running_banca = banca_inicial
@@ -69,11 +74,16 @@ async def get_kpis(
     max_drawdown = Decimal("0")
 
     for bet in bets:
-        total_apostado += bet.stake
-        profit = (bet.return_amount or Decimal("0")) - bet.stake
-        lucro_liquido += profit
-        weighted_odds_sum += bet.odd * bet.stake
-        weighted_stake_sum += bet.stake
+        is_void = bet.result == BetResult.void
+        profit = (bet.return_amount or Decimal("0")) - bet.stake  # 0 for void
+
+        # Monetary/rate metrics: exclude void
+        if not is_void:
+            total_apostado += bet.stake
+            weighted_odds_sum += bet.odd * bet.stake
+            weighted_stake_sum += bet.stake
+
+        lucro_liquido += profit  # void contributes 0
 
         if bet.result == BetResult.green:
             greens += 1
@@ -81,8 +91,10 @@ async def get_kpis(
         elif bet.result == BetResult.red:
             reds += 1
             results_ordered.append("red")
+        else:
+            results_ordered.append("void")
 
-        running_banca += profit
+        running_banca += profit  # void: no change
         if running_banca > peak:
             peak = running_banca
         dd = peak - running_banca
@@ -91,7 +103,7 @@ async def get_kpis(
 
     banca_atual = banca_inicial + lucro_liquido
     variacao_pct = (lucro_liquido / banca_inicial * 100) if banca_inicial else Decimal("0")
-    total_resolved = greens + reds
+    total_resolved = greens + reds  # void excluded from hit-rate denominator
     roi = (lucro_liquido / total_apostado * 100) if total_apostado else Decimal("0")
     taxa_acerto = (
         Decimal(greens) / Decimal(total_resolved) * 100 if total_resolved else Decimal("0")
@@ -100,7 +112,7 @@ async def get_kpis(
     breakeven = (Decimal("1") / odd_media * 100) if odd_media else Decimal("0")
     edge = taxa_acerto - breakeven
 
-    # Streak
+    # Streak: void counts as its own type (can show a void streak)
     streak_atual = 0
     streak_tipo = "none"
     if results_ordered:
@@ -140,7 +152,7 @@ async def get_timeseries(
     date_to: date | None = None,
 ) -> list[TimeseriesPoint]:
     banca_inicial = Decimal(await _get_setting(session, "banca_inicial", "1000"))
-    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+    bets = await _resolved_bets(session, bet_type, date_from, date_to, include_void=True)
 
     daily_profit: dict[date, Decimal] = defaultdict(Decimal)
     for bet in bets:
@@ -161,7 +173,7 @@ async def get_profit_by_type(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[ProfitByTypePoint]:
-    bets = await _resolved_bets(session, None, date_from, date_to)
+    bets = await _resolved_bets(session, None, date_from, date_to, include_void=True)
 
     def _empty_type_dict():
         return {"principal": Decimal("0"), "zoiao": Decimal("0")}
@@ -193,7 +205,7 @@ async def get_odds_distribution(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[OddsDistributionBin]:
-    bets = await _resolved_bets(session, None, date_from, date_to)
+    bets = await _resolved_bets(session, None, date_from, date_to, include_void=True)
 
     bins: dict[str, int] = defaultdict(int)
     for bet in bets:
@@ -259,7 +271,7 @@ async def get_weekday_results(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[WeekdayResult]:
-    bets = await _resolved_bets(session, None, date_from, date_to)
+    bets = await _resolved_bets(session, None, date_from, date_to, include_void=True)
 
     weekdays: dict[int, dict[str, Decimal | int]] = defaultdict(
         lambda: {"profit": Decimal("0"), "count": 0}
@@ -291,7 +303,7 @@ async def get_market_profit(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[MarketProfit]:
-    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+    bets = await _resolved_bets(session, bet_type, date_from, date_to, include_void=True)
 
     markets: dict[str, dict[str, Decimal | int]] = defaultdict(
         lambda: {"profit": Decimal("0"), "count": 0, "greens": 0}
@@ -326,7 +338,7 @@ async def get_monthly_results(
     date_from: date | None = None,
     date_to: date | None = None,
 ) -> list[MonthlyResult]:
-    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+    bets = await _resolved_bets(session, bet_type, date_from, date_to, include_void=True)
 
     months: dict[str, dict[str, Decimal | int]] = defaultdict(
         lambda: {"profit": Decimal("0"), "count": 0}
@@ -379,7 +391,7 @@ async def get_bet_evolution(
     date_to: date | None = None,
 ) -> list[BetEvolutionPoint]:
     banca_inicial = Decimal(await _get_setting(session, "banca_inicial", "1000"))
-    bets = await _resolved_bets(session, bet_type, date_from, date_to)
+    bets = await _resolved_bets(session, bet_type, date_from, date_to, include_void=True)
 
     points: list[BetEvolutionPoint] = []
     running_banca = banca_inicial

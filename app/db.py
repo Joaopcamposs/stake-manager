@@ -15,7 +15,7 @@ engine = create_async_engine(_url, echo=False)
 
 async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-metadata = MetaData(schema="bet_tracker")
+metadata = MetaData(schema="stake_manager")
 
 
 class Base(DeclarativeBase):

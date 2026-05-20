@@ -201,7 +201,7 @@ async function loadEvolutionChart() {
           tension: 0.2,
           pointRadius: 3,
           pointBackgroundColor: data.map((p) =>
-            p.result === "green" ? "#4caf50" : p.result === "red" ? "#f44336" : "#999"
+            p.result === "green" ? "#4caf50" : p.result === "red" ? "#f44336" : p.result === "void" ? "#ffc107" : "#999"
           ),
         },
         {

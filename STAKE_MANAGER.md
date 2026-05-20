@@ -1,4 +1,4 @@
-# Bet Tracker — Planejamento de Desenvolvimento
+# Stake Manager — Planejamento de Desenvolvimento
 
 ## Visão Geral
 
@@ -207,7 +207,7 @@ Mínimo viável = paridade com a planilha. Bom = superior.
 ## Estrutura do Projeto
 
 ```
-bet-tracker/
+stake-manager/
 ├── pyproject.toml          # uv, ruff, ty configurados
 ├── docker-compose.yml      # app + postgres
 ├── Dockerfile
@@ -305,7 +305,7 @@ Sugestão de ordem (cada item é um commit ou PR pequeno):
 ## Arquivo `.env.example`
 
 ```
-DATABASE_URL=postgresql+psycopg://bet:bet@db:5432/bet_tracker
+DATABASE_URL=postgresql+psycopg://bet:bet@db:5432/stake_manager
 APP_PASSWORD=troque_isso
 SESSION_SECRET=gere_uma_chave_aleatoria_longa
 TIMEZONE=America/Sao_Paulo

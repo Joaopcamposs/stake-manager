@@ -24,9 +24,9 @@ async def session() -> AsyncGenerator[AsyncSession]:
         yield sess
 
     # Restore schema
-    Base.metadata.schema = "bet_tracker"
+    Base.metadata.schema = "stake_manager"
     for table in Base.metadata.tables.values():
-        table.schema = "bet_tracker"
+        table.schema = "stake_manager"
 
     await eng.dispose()
 

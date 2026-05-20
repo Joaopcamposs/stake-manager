@@ -1,8 +1,8 @@
-# Bet Tracker — Documentação de Produto
+# Stake Manager — Documentação de Produto
 
 ## Visão Geral
 
-Bet Tracker é uma aplicação web pessoal para registro e acompanhamento de apostas esportivas. Permite controlar banca, registrar apostas com mercados específicos, acompanhar resultados e visualizar métricas de desempenho.
+Stake Manager é uma aplicação web pessoal para registro e acompanhamento de apostas esportivas. Permite controlar banca, registrar apostas com mercados específicos, acompanhar resultados e visualizar métricas de desempenho.
 
 ## Funcionalidades
 

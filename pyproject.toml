@@ -1,7 +1,7 @@
 [project]
-name = "bet-tracker"
+name = "stake-manager"
 version = "0.1.0"
-description = "Bet tracking web application"
+description = "Stake management web application"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
