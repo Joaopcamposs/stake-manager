@@ -26,24 +26,11 @@ STATIC_DIR = PROJECT_ROOT / "static"
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     import logging
 
-    from sqlalchemy import text
-
     logger = logging.getLogger(__name__)
     try:
         async with engine.begin() as conn:
-            # Rename legacy schema if it still exists
-            await conn.execute(text("""
-                DO $$ BEGIN
-                    IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'bet_tracker')
-                       AND NOT EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'stake_manager')
-                    THEN ALTER SCHEMA bet_tracker RENAME TO stake_manager; END IF;
-                END $$
-            """))
             await conn.execute(text("CREATE SCHEMA IF NOT EXISTS stake_manager"))
             await conn.run_sync(Base.metadata.create_all)
-            await conn.execute(
-                text("ALTER TABLE stake_manager.bets ADD COLUMN IF NOT EXISTS market TEXT")
-            )
         logger.info("Schema stake_manager + tables created")
     except Exception as e:
         logger.warning("Could not connect to database on startup: %s", e)

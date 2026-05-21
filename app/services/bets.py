@@ -1,17 +1,17 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
 from models.bet import Bet, BetResult, BetType
 from schemas.bet import BetCreate
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils import today_sp
+from utils import now_sp
 from uuid_extensions import uuid7
 
 
 async def create_bets(session: AsyncSession, data: BetCreate) -> list[Bet]:
-    bet_date = data.bet_date or today_sp()
+    bet_date = data.bet_date or now_sp().replace(second=0, microsecond=0)
     bets: list[Bet] = []
 
     has_principal = data.principal_odd is not None and data.principal_odd > 0
@@ -108,9 +108,9 @@ async def list_resolved(
     if bet_type:
         stmt = stmt.where(Bet.bet_type == BetType(bet_type))
     if date_from:
-        stmt = stmt.where(Bet.bet_date >= date_from)
+        stmt = stmt.where(func.date(func.timezone('America/Sao_Paulo', Bet.bet_date)) >= date_from)
     if date_to:
-        stmt = stmt.where(Bet.bet_date <= date_to)
+        stmt = stmt.where(func.date(func.timezone('America/Sao_Paulo', Bet.bet_date)) <= date_to)
 
     stmt = stmt.order_by(Bet.id.desc()).limit(limit).offset(offset)
     result = await session.execute(stmt)
@@ -120,7 +120,7 @@ async def list_resolved(
 async def update_bet(
     session: AsyncSession,
     bet_id: UUID,
-    bet_date: date | None = None,
+    bet_date: datetime | None = None,
     game_name: str | None = None,
     market: str | None = None,
     stake: Decimal | None = None,

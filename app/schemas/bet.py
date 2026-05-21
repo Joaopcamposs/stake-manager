@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -7,7 +7,7 @@ from pydantic import BaseModel, model_validator
 
 class BetCreate(BaseModel):
     game_name: str | None = None
-    bet_date: date | None = None
+    bet_date: datetime | None = None  # full datetime with time; defaults to now in SP tz
     principal_stake: Decimal | None = None
     principal_odd: Decimal | None = None
     principal_market: str | None = None
@@ -30,7 +30,7 @@ class BetCreate(BaseModel):
 class BetResponse(BaseModel):
     id: UUID
     created_at: str
-    bet_date: date
+    bet_date: datetime
     game_name: str | None
     bet_type: str
     stake: Decimal

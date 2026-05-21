@@ -49,7 +49,7 @@
     <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/60 transition bet-row"
          data-bet-id="{{ bet.id }}"
          data-game="{{ bet.game_name or '' }}"
-         data-date="{{ bet.bet_date }}"
+         data-date="{{ bet.bet_date | sp_dt('%Y-%m-%dT%H:%M') }}"
          data-type="{{ bet.bet_type.value }}"
          data-market="{{ bet.market or '' }}"
          data-stake="{{ bet.stake }}"
@@ -69,7 +69,7 @@
                 <strong class="text-sm">{{ bet.game_name or "—" }}</strong>
             </div>
             <span class="text-sm text-gray-400">R$ {{ "%.2f"|format(bet.stake|float) }} @ {{ "%.2f"|format(bet.odd|float) }}</span>
-            <small class="text-xs text-gray-500">{{ bet.bet_date }}</small>
+            <small class="text-xs text-gray-500">{{ bet.bet_date | sp_dt }}</small>
         </div>
         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </div>
@@ -86,7 +86,7 @@
     <div class="bg-gray-800 rounded-xl p-4 flex justify-between items-center cursor-pointer hover:bg-gray-700/60 transition bet-row"
          data-bet-id="{{ bet.id }}"
          data-game="{{ bet.game_name or '' }}"
-         data-date="{{ bet.bet_date }}"
+         data-date="{{ bet.bet_date | sp_dt('%Y-%m-%dT%H:%M') }}"
          data-type="{{ bet.bet_type.value }}"
          data-market="{{ bet.market or '' }}"
          data-stake="{{ bet.stake }}"
@@ -115,7 +115,7 @@
                 {% endif %}
             </div>
             <span class="text-sm text-gray-400">R$ {{ "%.2f"|format(bet.stake|float) }} @ {{ "%.2f"|format(bet.odd|float) }} → R$ {{ "%.2f"|format(((bet.return_amount or 0)|float) - bet.stake|float) }}</span>
-            <small class="text-xs text-gray-500">{{ bet.bet_date }}</small>
+            <small class="text-xs text-gray-500">{{ bet.bet_date | sp_dt }}</small>
         </div>
         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </div>
@@ -143,8 +143,8 @@
                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-300 mb-1">Data</label>
-                <input type="date" name="bet_date" id="bet-date"
+                <label class="block text-sm font-medium text-gray-300 mb-1">Data e hora <span class="text-gray-500 font-normal">(opcional)</span></label>
+                <input type="datetime-local" name="bet_date" id="bet-date"
                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
             </div>
 

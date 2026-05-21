@@ -12,12 +12,22 @@ from fastapi.templating import Jinja2Templates
 from models.settings import AppSettings
 from services import bets as bet_service
 from sqlalchemy.ext.asyncio import AsyncSession
-from utils import today_sp
+from utils import SAO_PAULO_TZ, today_sp
 
 router = APIRouter()
 _TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(_TEMPLATES_DIR))
 templates.env.globals["vite"] = vite_asset("src/main.ts")
+
+
+def _sp_dt(dt, fmt: str = "%d/%m/%Y %H:%M") -> str:
+    """Convert a datetime to São Paulo timezone and format it."""
+    if dt is None:
+        return ""
+    return dt.astimezone(SAO_PAULO_TZ).strftime(fmt)
+
+
+templates.env.filters["sp_dt"] = _sp_dt
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -33,9 +43,7 @@ async def home(
     resolved_day = await bet_service.list_resolved(
         session, date_from=selected_date, date_to=selected_date, limit=100
     )
-    resolved_recent = await bet_service.list_resolved(session, limit=20)
-
-    day_pending = [b for b in pending if b.bet_date == selected_date]
+    day_pending = [b for b in pending if b.bet_date.astimezone(SAO_PAULO_TZ).date() == selected_date]
 
     greens_day = sum(1 for b in resolved_day if b.result and b.result.value == "green")
     reds_day = sum(1 for b in resolved_day if b.result and b.result.value == "red")
@@ -46,7 +54,7 @@ async def home(
         "home.html",
         {
             "pending": day_pending,
-            "resolved": resolved_day if not (selected_date == today) else resolved_recent,
+            "resolved": resolved_day,
             "selected_date": selected_date.isoformat(),
             "is_today": selected_date == today,
             "apostas_hoje": len(day_pending) + len(resolved_day),

@@ -12,15 +12,12 @@ const btnDelete = document.getElementById("btn-delete");
 const fieldResultPrincipal = document.getElementById("field-result-principal") as HTMLInputElement;
 const fieldResultZoiao = document.getElementById("field-result-zoiao") as HTMLInputElement;
 
-function toSaoPauloDate(date: Date): Date {
-  const saoPauloOffset = -3; // UTC-3 for São Paulo (no DST since 2019)
-  const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-  return new Date(utc + (saoPauloOffset * 3600000));
-}
-
-function localDate(): string {
-  const now = toSaoPauloDate(new Date());
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+function localDatetime(): string {
+  // Use Intl to format the current time directly in SP timezone — no manual offset math
+  const now = new Date();
+  const sp = now.toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" });
+  // sv-SE gives "YYYY-MM-DD HH:MM:SS", slice to "YYYY-MM-DDTHH:MM"
+  return sp.slice(0, 16).replace(" ", "T");
 }
 
 function resetModal() {
@@ -39,7 +36,7 @@ function resetModal() {
   clearResultSelection("zoiao");
 
   const dateInput = document.getElementById("bet-date") as HTMLInputElement;
-  dateInput.value = localDate();
+  dateInput.value = localDatetime();
   (document.getElementById("principal-stake") as HTMLInputElement).value = "100";
   (document.getElementById("zoiao-stake") as HTMLInputElement).value = "25";
 }
@@ -235,7 +232,7 @@ form?.addEventListener("submit", async (e) => {
 // Set default date on load
 const dateInput = document.getElementById("bet-date") as HTMLInputElement;
 if (dateInput && !dateInput.value) {
-  dateInput.value = localDate();
+  dateInput.value = localDatetime();
 }
 
 // Day selector navigation

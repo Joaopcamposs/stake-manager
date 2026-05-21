@@ -1,10 +1,10 @@
 import enum
-from datetime import date, datetime
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
 from db import Base
-from sqlalchemy import Date, DateTime, Enum, Numeric, Text, func
+from sqlalchemy import DateTime, Enum, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 from uuid_extensions import uuid7
 
@@ -45,7 +45,7 @@ class Bet(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid7)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    bet_date: Mapped[date] = mapped_column(Date)
+    bet_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     game_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     bet_type: Mapped[BetType] = mapped_column(Enum(BetType, native_enum=False))
     market: Mapped[str | None] = mapped_column(Text, nullable=True)

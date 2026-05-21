@@ -16,7 +16,7 @@ from schemas.stats import (
     TimeseriesPoint,
     WeekdayResult,
 )
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -40,9 +40,9 @@ async def _resolved_bets(
     if bet_type:
         stmt = stmt.where(Bet.bet_type == BetType(bet_type))
     if date_from:
-        stmt = stmt.where(Bet.bet_date >= date_from)
+        stmt = stmt.where(func.date(func.timezone('America/Sao_Paulo', Bet.bet_date)) >= date_from)
     if date_to:
-        stmt = stmt.where(Bet.bet_date <= date_to)
+        stmt = stmt.where(func.date(func.timezone('America/Sao_Paulo', Bet.bet_date)) <= date_to)
     stmt = stmt.order_by(Bet.bet_date, Bet.created_at)
     result = await session.execute(stmt)
     return list(result.scalars().all())
@@ -157,7 +157,7 @@ async def get_timeseries(
     daily_profit: dict[date, Decimal] = defaultdict(Decimal)
     for bet in bets:
         profit = (bet.return_amount or Decimal("0")) - bet.stake
-        daily_profit[bet.bet_date] += profit
+        daily_profit[bet.bet_date.date()] += profit
 
     points: list[TimeseriesPoint] = []
     running = banca_inicial
@@ -181,7 +181,7 @@ async def get_profit_by_type(
     daily: dict[date, dict[str, Decimal]] = defaultdict(_empty_type_dict)
     for bet in bets:
         profit = (bet.return_amount or Decimal("0")) - bet.stake
-        daily[bet.bet_date][bet.bet_type.value] += profit
+        daily[bet.bet_date.date()][bet.bet_type.value] += profit
 
     points: list[ProfitByTypePoint] = []
     acc_principal = Decimal("0")
@@ -406,7 +406,7 @@ async def get_bet_evolution(
                 index=i + 1,
                 banca=running_banca.quantize(Decimal("0.01")),
                 lucro_acumulado=lucro_acumulado.quantize(Decimal("0.01")),
-                date=bet.bet_date,
+                date=bet.bet_date.date(),
                 result=bet.result.value if bet.result else "void",
             )
         )
